@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 file=output.log
 namespace=simple-fio
@@ -42,12 +42,15 @@ extract_data () {
 	sed -i ' s/.$//' iops
 
 	count=0
-	for i in `grep "clat" $file | awk -F "avg=" '{print $2}' | awk -F "," '{print $1}'`;
+	sed -n '/clat/ s/.*avg=\([^,]*\).*/\1/p' "$file" > avg.tmp
+	sed -n '/clat/!d; /percentiles/d; s/.*(\([^)]*\)).*/\1/p' "$file" > unit.tmp
+	paste -d',' avg.tmp unit.tmp | while read avg unit;
+	# paste -d',' <(sed -n '/clat/ s/.*avg=\([^,]*\).*/\1/p' "$file") <(sed -n '/clat/!d; /percentiles/d; s/.*(\([^)]*\)).*/\1/p' "$file") | while read avg unit;
 	do
-        printf "%12s" "$i|";
-        count=$(($count+1))
-        if [[ $count%${sample} -eq 0 ]]; then
-                echo ""
+        printf "%12s|%8s  " "$avg" "$unit"
+        count=$((count + 1))
+        if (( count % sample == 0 )); then
+            echo ""
         fi
 	done > clat
 
@@ -55,11 +58,11 @@ extract_data () {
 
 if [ $platform == "bm" ]; then
 	extract_data
-	echo "start_time|end_time|fio-Server|workload|bs|numjobs|iodepth"
+	echo "start_time|end_time|fio-Server|workload|bs|numjobs|iodepth|IOPs|Latency"
 	paste -d'|' start_time end_time server workload bs job_detail iops clat
 	rm -f consumer start_time end_time server workload bs job_detail iops clat output.log
 elif [ $platform == "hcp" ]; then
-	echo "consumers|start_time|end_time|fio-Server|workload|bs|numjobs|iodepth"
+	echo "consumers|start_time|end_time|fio-Server|workload|bs|numjobs|iodepth|IOPs|Latency"
 	for consumer in $(cat consumers.lst)
 	do
 		oc config use $consumer > /dev/null
@@ -78,4 +81,3 @@ elif [ $platform == "hcp" ]; then
 		echo "--------------"
 	done
 fi
-

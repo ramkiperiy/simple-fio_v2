@@ -23,6 +23,7 @@ echo "[global]" > ${file}
 echo "ioengine=libaio" >> ${file}
 grep "^direct" config.file >> ${file}
 grep "^numjobs" config.file >> ${file}
+grep "^create_on_open" config.file >> ${file}
 grep "^size" config.file >> ${file}
 
 if [[ `grep "^storage_type" config.file | awk -F "=" '{print $2}'` =~ "ceph-rbd" ]]; then
@@ -47,6 +48,7 @@ echo "rw=\${RW}" >> ${file}
 echo "bs=\${BS}" >> ${file}
 grep "^rwmixread" config.file >> ${file}
 grep "^time_based" config.file >> ${file}
+grep "^ramp_time" config.file >> ${file}
 grep "^runtime" config.file >> ${file}
 grep "^iodepth" config.file >> ${file}
 grep "^rate_iops" config.file >> ${file}

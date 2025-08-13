@@ -29,7 +29,7 @@ run_test () {
 	do
 		export srv=${i}
 		if [[ `grep "^storage_type" config.file | awk -F "=" '{print $2}'` =~ "ceph-rbd" ]]; then
-			sc=$(oc get sc | grep rbd | awk '{print $1}')
+			sc=$(oc get sc | grep rbd | grep -v virt | awk '{print $1}')
 			export sc=${sc}
 			envsubst < blk-pvc.yaml | oc create -f -
 			sleep 20
@@ -41,6 +41,13 @@ run_test () {
 			envsubst < fs-pvc.yaml | oc create -f -
 			sleep 20
 			envsubst < fs-server.yaml | oc create -f -
+		
+		elif [[ `grep "^storage_type" config.file | awk -F "=" '{print $2}'` =~ "10iops" ]]; then
+			sc=$(oc get sc | grep 10iops | awk '{print $1}')
+			export sc=${sc}
+			envsubst < blk-pvc.yaml | oc create -f -
+			sleep 20
+			envsubst < blk-server.yaml | oc create -f -
 		fi
 
 		oc wait pod --for=condition=Ready -l app=fio-server --timeout=1h > /dev/null
